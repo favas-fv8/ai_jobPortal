@@ -1,0 +1,109 @@
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
+import Navbar from './components/layout/Navbar'
+import DashboardLayout from './components/layout/DashboardLayout'
+import RequireAuth from './components/layout/RequireAuth'
+import HomePage from './pages/HomePage'
+import LoginPage from './pages/auth/LoginPage'
+import RegisterPage from './pages/auth/RegisterPage'
+import NotFoundPage from './pages/NotFoundPage'
+
+// Admin pages
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminUsers from './pages/admin/AdminUsers'
+import AdminJobs from './pages/admin/AdminJobs'
+import AdminApplications from './pages/admin/AdminApplications'
+
+// Recruiter pages
+import RecruiterDashboard from './pages/recruiter/RecruiterDashboard'
+import RecruiterJobs from './pages/recruiter/RecruiterJobs'
+import RecruiterNewJob from './pages/recruiter/RecruiterNewJob'
+import RecruiterApplicants from './pages/recruiter/RecruiterApplicants'
+
+// Job seeker pages
+import SeekerDashboard from './pages/jobseeker/SeekerDashboard'
+import SeekerJobs from './pages/jobseeker/SeekerJobs'
+import SeekerRecommendations from './pages/jobseeker/SeekerRecommendations'
+import SeekerResume from './pages/jobseeker/SeekerResume'
+import SeekerApplications from './pages/jobseeker/SeekerApplications'
+import Profile from './pages/Profile'
+
+function PublicLayout() {
+  return (
+    <>
+      <Navbar />
+      <Outlet />
+    </>
+  )
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+      </Route>
+
+      {/* Admin routes */}
+      <Route
+        path="/admin"
+        element={
+          <RequireAuth roles={['admin']}>
+            <DashboardLayout role="admin" />
+          </RequireAuth>
+        }
+      >
+        <Route index element={<AdminDashboard />} />
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="jobs" element={<AdminJobs />} />
+        <Route path="applications" element={<AdminApplications />} />
+      </Route>
+
+      {/* Recruiter routes */}
+      <Route
+        path="/recruiter"
+        element={
+          <RequireAuth roles={['recruiter']}>
+            <DashboardLayout role="recruiter" />
+          </RequireAuth>
+        }
+      >
+        <Route index element={<RecruiterDashboard />} />
+        <Route path="jobs" element={<RecruiterJobs />} />
+        <Route path="new-job" element={<RecruiterNewJob />} />
+        <Route path="applicants" element={<RecruiterApplicants />} />
+      </Route>
+
+      {/* Job seeker routes */}
+      <Route
+        path="/seeker"
+        element={
+          <RequireAuth roles={['jobseeker']}>
+            <DashboardLayout role="jobseeker" />
+          </RequireAuth>
+        }
+      >
+        <Route index element={<SeekerDashboard />} />
+        <Route path="jobs" element={<SeekerJobs />} />
+        <Route path="recommendations" element={<SeekerRecommendations />} />
+        <Route path="resume" element={<SeekerResume />} />
+        <Route path="applications" element={<SeekerApplications />} />
+      </Route>
+
+      {/* Shared profile route (any authenticated role) */}
+      <Route
+        path="/profile"
+        element={
+          <RequireAuth>
+            <DashboardLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={<Profile />} />
+      </Route>
+
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  )
+}

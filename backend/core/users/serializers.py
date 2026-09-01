@@ -63,3 +63,20 @@ class UserSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'first_name', 'last_name', 'email', 'role']
+
+
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'first_name', 'last_name',
+                  'phone_number', 'company', 'profile_photo']
+        read_only_fields = ['username']
+
+    def validate_email(self, value):
+        user = self.instance
+        qs = User.objects.filter(email=value)
+        if user:
+            qs = qs.exclude(id=user.id)
+        if qs.exists():
+            raise serializers.ValidationError('An account with this email already exists.')
+        return value

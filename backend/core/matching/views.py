@@ -6,7 +6,30 @@ from django.db.models import Q
 from core.jobs.models import Job
 from core.resumes.models import Resume
 from core.applications.models import Application
-from .matching_service import match_resume_to_job, compare_skills
+from core.ai_services.parser import extract_resume_text
+from .matching_service import match_resume_to_job, compare_skills, extract_keywords
+
+
+def _candidate_skills(resume):
+    """Return the best available candidate skill list.
+
+    Prefers AI-extracted skills; falls back to lightweight local keyword
+    extraction from the resume text so matching works even without Gemini.
+    """
+    if resume.skills:
+        return resume.skills or []
+    skills = []
+    text = ''
+    if resume.parsed_raw_text:
+        text = resume.parsed_raw_text
+    elif resume.file and resume.file.path:
+        try:
+            text = extract_resume_text(resume.file.path, resume.file_format)
+        except Exception:
+            text = ''
+    if text:
+        skills = extract_keywords(text)
+    return skills
 
 
 class RecommendationSerializer(serializers.Serializer):
@@ -45,17 +68,16 @@ class MatchingViewSet(viewsets.ViewSet):
                 return Response({'error': 'Resume not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         if resume is None:
-            resume = Resume.objects.filter(user=request.user, is_primary=True,
-                                           is_analyzed=True).first()
+            resume = Resume.objects.filter(user=request.user, is_primary=True).first()
 
         if not resume:
             return Response(
-                {'error': 'No analyzed resume found. Upload and analyze a resume first.',
+                {'error': 'No resume found. Upload a resume first.',
                  'code': 'no_resume'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        candidate_skills = resume.skills or []
+        candidate_skills = _candidate_skills(resume)
         open_jobs = Job.objects.filter(is_active=True, status='open')
 
         results = []
@@ -109,7 +131,7 @@ class MatchingViewSet(viewsets.ViewSet):
         if not resume:
             return Response({'error': 'No resume found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        candidate_skills = resume.skills or []
+        candidate_skills = _candidate_skills(resume)
         match = match_resume_to_job(
             candidate_skills,
             job_required_skills=job.skills_required,

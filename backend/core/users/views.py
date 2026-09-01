@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth import get_user_model
 from .serializers import (
-    UserSerializer, UserCreateSerializer, UserUpdateSerializer, UserSummarySerializer
+    UserSerializer, UserCreateSerializer, UserUpdateSerializer, UserSummarySerializer,
+    ProfileUpdateSerializer,
 )
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -37,6 +38,11 @@ class RegisterView(generics.CreateAPIView):
 class ProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
 
+    def get_serializer_class(self):
+        if self.request.method in ('PUT', 'PATCH'):
+            return ProfileUpdateSerializer
+        return UserSerializer
+
     def get_object(self):
         return self.request.user
 
@@ -58,6 +64,8 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserUpdateSerializer
     permission_classes = [permissions.IsAdminUser]
+    lookup_field = 'id'
+    lookup_url_kwarg = 'user_id'
 
 
 @api_view(['POST'])

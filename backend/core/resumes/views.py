@@ -34,7 +34,7 @@ class ResumeViewSet(viewsets.ModelViewSet):
             user=self.request.user,
             file_name=file_name,
             file_size=file_size,
-            file_format=ext if ext in ['pdf', 'docx', 'doc'] else 'other'
+            file_format=ext if ext in ['pdf', 'docx', 'doc', 'txt'] else 'other'
         )
         # Set as primary if first resume
         if not Resume.objects.filter(user=self.request.user, is_primary=True).exclude(id=resume.id).exists():

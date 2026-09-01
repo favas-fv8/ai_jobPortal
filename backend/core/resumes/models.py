@@ -7,6 +7,7 @@ class Resume(models.Model):
     RESUME_FORMAT_CHOICES = [
         ('pdf', 'PDF'),
         ('docx', 'DOCX'),
+        ('txt', 'TXT'),
         ('other', 'Other'),
     ]
 
