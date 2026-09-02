@@ -103,3 +103,20 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         applications = Application.objects.filter(applicant=request.user)
         serializer = ApplicationSerializer(applications, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def withdraw(self, request, pk=None):
+        application = self.get_object()
+
+        # Permission: Only the applicant or an admin can withdraw
+        if not (request.user.is_admin_user or request.user == application.applicant):
+            return Response({'error': 'You do not have permission to withdraw this application.'},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        if application.status == 'withdrawn':
+            return Response({'error': 'This application is already withdrawn.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        application.status = 'withdrawn'
+        application.save()
+        return Response(ApplicationSerializer(application).data)

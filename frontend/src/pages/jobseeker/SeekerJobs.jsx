@@ -167,7 +167,7 @@ export default function SeekerJobs() {
                 {job.location && <Badge color="secondary">{job.location}</Badge>}
                 <Badge color="success">Open</Badge>
               </div>
-              <p className="text-sm muted" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+              <p className="text-sm muted" style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                 {job.description}
               </p>
               <div className="text-sm muted">{formatSalary(job.salary_min, job.salary_max)}</div>

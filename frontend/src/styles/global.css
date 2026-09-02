@@ -354,6 +354,8 @@ input[type='file'].form-control {
 .grid {
   display: grid;
   gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
 }
 
 .grid-2 { grid-template-columns: repeat(2, 1fr); }
@@ -459,6 +461,20 @@ input[type='file'].form-control {
 
 .table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.clickable-row {
+  transition: background 0.15s ease;
+}
+
+.clickable-row:hover .text-sm,
+.clickable-row:hover .bold {
+  color: var(--primary);
+}
+
+.dimmed-row {
+  opacity: 0.5;
+  filter: grayscale(0.6);
 }
 
 /* Navigation */
@@ -755,6 +771,11 @@ input[type='file'].form-control {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .job-card-top {
@@ -762,6 +783,14 @@ input[type='file'].form-control {
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
+}
+
+.application-detail-card {
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .job-title {
@@ -895,6 +924,7 @@ input[type='file'].form-control {
   width: 100%;
   max-width: 560px;
   max-height: 90vh;
+  overflow-x: hidden;
   overflow-y: auto;
 }
 
@@ -908,6 +938,8 @@ input[type='file'].form-control {
 
 .modal-body {
   padding: 24px;
+  overflow-x: hidden;
+  word-wrap: break-word;
 }
 
 .modal-footer {

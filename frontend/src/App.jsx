@@ -25,6 +25,7 @@ import SeekerJobs from './pages/jobseeker/SeekerJobs'
 import SeekerRecommendations from './pages/jobseeker/SeekerRecommendations'
 import SeekerResume from './pages/jobseeker/SeekerResume'
 import SeekerApplications from './pages/jobseeker/SeekerApplications'
+import SeekerApplicationDetail from './pages/jobseeker/SeekerApplicationDetail'
 import Profile from './pages/Profile'
 
 function PublicLayout() {
@@ -89,6 +90,7 @@ export default function App() {
         <Route path="recommendations" element={<SeekerRecommendations />} />
         <Route path="resume" element={<SeekerResume />} />
         <Route path="applications" element={<SeekerApplications />} />
+        <Route path="applications/:id" element={<SeekerApplicationDetail />} />
       </Route>
 
       {/* Shared profile route (any authenticated role) */}

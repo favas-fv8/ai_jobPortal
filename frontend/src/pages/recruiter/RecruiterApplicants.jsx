@@ -15,6 +15,16 @@ import {
 import { formatDateTime, applicationStatusLabel, getApiError } from '../../utils/helpers'
 
 const statusOptions = ['submitted', 'under_review', 'interview', 'offer', 'hired', 'rejected', 'withdrawn']
+const statusEditableOptions = ['submitted', 'under_review', 'interview', 'offer', 'hired', 'rejected']
+const statusBadgeMap = {
+  submitted: 'info',
+  under_review: 'warning',
+  interview: 'primary',
+  offer: 'success',
+  hired: 'success',
+  rejected: 'danger',
+  withdrawn: 'secondary',
+}
 
 export default function RecruiterApplicants() {
   const [searchParams] = useSearchParams()
@@ -174,50 +184,65 @@ export default function RecruiterApplicants() {
                 </tr>
               </thead>
               <tbody>
-                {applicants.map((a) => (
-                  <tr key={a.application_id} onClick={() => setSelected(a)} style={{ cursor: 'pointer' }}>
-                    <td>
-                      <div className="flex gap-2" style={{ alignItems: 'center' }}>
-                        <span className="avatar">{(a.applicant_name || a.applicant_email || '?').charAt(0).toUpperCase()}</span>
-                        <div>
-                          <div className="bold text-sm">{a.applicant_name}</div>
-                          <div className="text-xs muted">{a.applicant_email}</div>
+                {applicants.map((a) => {
+                  const isWithdrawn = a.status === 'withdrawn'
+                  return (
+                    <tr
+                      key={a.application_id}
+                      className={isWithdrawn ? 'clickable-row dimmed-row' : 'clickable-row'}
+                      onClick={() => { if (!isWithdrawn) setSelected(a) }}
+                      style={{ cursor: isWithdrawn ? 'not-allowed' : 'pointer' }}
+                      title={isWithdrawn ? 'This application was withdrawn' : ''}
+                    >
+                      <td>
+                        <div className="flex gap-2" style={{ alignItems: 'center' }}>
+                          <span className="avatar">{(a.applicant_name || a.applicant_email || '?').charAt(0).toUpperCase()}</span>
+                          <div>
+                            <div className="bold text-sm">{a.applicant_name}</div>
+                            <div className="text-xs muted">{a.applicant_email}</div>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="text-sm">{a.job_title}</td>
-                    <td>
-                      {a.is_ai_analyzed ? (
-                        <MatchScore score={a.match_score} showLabel={false} />
-                      ) : (
-                        <span className="badge badge-secondary">Not analyzed</span>
-                      )}
-                    </td>
-                    <td>
-                      <select
-                        className="form-control"
-                        style={{ width: 'auto', padding: '4px 8px', fontSize: 13 }}
-                        value={a.status}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => handleStatusChange(a.application_id, e.target.value)}
-                      >
-                        {statusOptions.map((s) => <option key={s} value={s}>{applicationStatusLabel[s]}</option>)}
-                      </select>
-                    </td>
-                    <td className="text-sm muted">{formatDateTime(a.applied_at)}</td>
-                    <td>
-                      <button
-                        className="btn btn-sm btn-primary"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSelected(a)
-                        }}
-                      >
-                        <SparklesIcon size={13} /> Review
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="text-sm">{a.job_title}</td>
+                      <td>
+                        {a.is_ai_analyzed ? (
+                          <MatchScore score={a.match_score} showLabel={false} />
+                        ) : (
+                          <span className="badge badge-secondary">Not analyzed</span>
+                        )}
+                      </td>
+                      <td>
+                        {isWithdrawn ? (
+                          <Badge color={statusBadgeMap[a.status] || 'secondary'}>{applicationStatusLabel[a.status] || a.status}</Badge>
+                        ) : (
+                          <select
+                            className="form-control"
+                            style={{ width: 'auto', padding: '4px 8px', fontSize: 13 }}
+                            value={a.status}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => handleStatusChange(a.application_id, e.target.value)}
+                          >
+                            {statusEditableOptions.map((s) => <option key={s} value={s}>{applicationStatusLabel[s]}</option>)}
+                          </select>
+                        )}
+                      </td>
+                      <td className="text-sm muted">{formatDateTime(a.applied_at)}</td>
+                      <td>
+                        {!isWithdrawn && (
+                          <button
+                            className="btn btn-sm btn-primary"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelected(a)
+                            }}
+                          >
+                            <SparklesIcon size={13} /> Review
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -268,6 +293,18 @@ export default function RecruiterApplicants() {
               ) : <span className="text-xs muted">No gaps identified yet.</span>}
             </div>
 
+            {selected.cover_letter ? (
+              <div className="mb-3">
+                <div className="text-sm bold mb-2">Cover Letter</div>
+                <p className="text-sm" style={{ whiteSpace: 'pre-wrap' }}>{selected.cover_letter}</p>
+              </div>
+            ) : (
+              <div className="mb-3">
+                <div className="text-sm bold mb-2">Cover Letter</div>
+                <span className="text-xs muted">No cover letter provided.</span>
+              </div>
+            )}
+
             <div className="flex gap-2 flex-wrap" style={{ alignItems: 'center' }}>
               <button
                 className="btn btn-primary"
@@ -277,7 +314,12 @@ export default function RecruiterApplicants() {
                 {analyzing ? <span className="spinner" /> : <SparklesIcon size={15} />}
                 {analyzing ? 'Analyzing...' : selected.is_ai_analyzed ? 'Re-analyze with AI' : 'Analyze with AI'}
               </button>
-              <button className="btn btn-secondary" onClick={() => window.open(`/media/${selected.resume_file || ''}`, '_blank')}>
+              <button
+                className="btn btn-secondary"
+                disabled={!selected.resume_file}
+                onClick={() => { if (selected.resume_file) window.open(selected.resume_file, '_blank') }}
+                title={selected.resume_file ? 'Open resume' : 'Applicant has no resume'}
+              >
                 <DownloadIcon size={15} /> Resume
               </button>
             </div>

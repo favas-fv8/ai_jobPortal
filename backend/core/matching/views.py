@@ -193,4 +193,6 @@ class MatchingViewSet(viewsets.ViewSet):
             'missing_skills': a.missing_skills,
             'is_ai_analyzed': a.is_ai_analyzed,
             'applied_at': a.created_at,
+            'cover_letter': a.cover_letter,
+            'resume_file': a.resume.file.url if a.resume and a.resume.file else None,
         } for a in applications])
