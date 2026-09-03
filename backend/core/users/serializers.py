@@ -68,9 +68,10 @@ class UserSummarySerializer(serializers.ModelSerializer):
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name',
-                  'phone_number', 'company', 'profile_photo']
-        read_only_fields = ['username']
+        fields = ['id', 'username', 'email', 'role', 'first_name', 'last_name',
+                  'phone_number', 'company', 'profile_photo', 'is_active',
+                  'date_joined']
+        read_only_fields = ['id', 'username', 'role', 'is_active', 'date_joined']
 
     def validate_email(self, value):
         user = self.instance

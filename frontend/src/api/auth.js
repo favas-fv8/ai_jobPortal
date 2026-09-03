@@ -10,5 +10,7 @@ export const authApi = {
   getProfile: () =>
     api.get('/auth/me/'),
   updateProfile: (data) =>
-    api.patch('/auth/me/', data),
+    api.patch('/auth/me/', data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 }

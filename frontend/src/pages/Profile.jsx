@@ -15,12 +15,24 @@ export default function Profile() {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState({})
+  const [form, setForm] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone_number: '',
+    company: '',
+  })
   const [photo, setPhoto] = useState(null)
   const [photoPreview, setPhotoPreview] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
+
+  useEffect(() => {
+    if (!success) return
+    const t = setTimeout(() => setSuccess(''), 3000)
+    return () => clearTimeout(t)
+  }, [success])
 
   useEffect(() => {
     authApi
@@ -53,9 +65,12 @@ export default function Profile() {
   const validate = () => {
     const errors = {}
     if (!form.first_name) errors.first_name = 'First name is required'
+    else if (!/^[A-Za-z\s'-]+$/.test(form.first_name)) errors.first_name = 'First name must contain only letters'
     if (!form.last_name) errors.last_name = 'Last name is required'
+    else if (!/^[A-Za-z\s'-]+$/.test(form.last_name)) errors.last_name = 'Last name must contain only letters'
     if (!form.email) errors.email = 'Email is required'
     else if (!/^\S+@\S+\.\S+$/.test(form.email)) errors.email = 'Enter a valid email address'
+    if (form.phone_number && !/^\d{10}$/.test(form.phone_number)) errors.phone_number = 'Phone number must be exactly 10 digits'
     return errors
   }
 
@@ -79,6 +94,13 @@ export default function Profile() {
     try {
       const res = await authApi.updateProfile(data)
       setProfile(res.data)
+      setForm({
+        first_name: res.data.first_name || '',
+        last_name: res.data.last_name || '',
+        email: res.data.email || '',
+        phone_number: res.data.phone_number || '',
+        company: res.data.company || '',
+      })
       setPhoto(null)
       setPhotoPreview('')
       updateUser(res.data)
@@ -115,9 +137,6 @@ export default function Profile() {
         <div className="alert alert-error mb-3">
           <AlertIcon size={16} /> {error}
         </div>
-      )}
-      {success && (
-        <div className="alert alert-success mb-3">{success}</div>
       )}
 
       <form onSubmit={handleSubmit}>
@@ -207,6 +226,7 @@ export default function Profile() {
                 <input type="tel" name="phone_number" className="form-control" placeholder="+1 555 123 4567"
                   value={form.phone_number} onChange={handleChange} />
               </div>
+              {fieldErrors.phone_number && <div className="form-error">{fieldErrors.phone_number}</div>}
             </div>
             {(profile?.role === 'recruiter' || profile?.is_superuser) && (
               <div className="form-group">
@@ -228,6 +248,11 @@ export default function Profile() {
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
+        {success && (
+          <div className="alert alert-success mb-4">
+            {success}
+          </div>
+        )}
       </form>
     </div>
   )

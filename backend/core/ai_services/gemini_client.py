@@ -16,7 +16,7 @@ class GeminiClient:
         self.api_key = getattr(settings, 'GEMINI_API_KEY', '') or os.getenv('GEMINI_API_KEY', '')
         self.available = bool(self.api_key)
         self.client = None
-        self.model_name = 'gemini-2.0-flash'
+        self.model_name = os.getenv('GEMINI_MODEL', 'gemini-3.6-flash')
         if self.available:
             self.client = genai.Client(api_key=self.api_key)
 
