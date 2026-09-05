@@ -12,7 +12,7 @@ import Modal from '../../components/ui/Modal'
 import SkillList from '../../components/ui/SkillList'
 import {
   SparklesIcon, SendIcon, TargetIcon, CheckIcon, XIcon, BriefcaseIcon,
-  EyeIcon, UploadIcon, LocationIcon,
+  EyeIcon, UploadIcon, LocationIcon, RefreshIcon,
 } from '../../components/Icons'
 import { formatDate, formatSalary, jobTypeLabel, experienceLevelLabel, getApiError } from '../../utils/helpers'
 
@@ -21,6 +21,7 @@ export default function SeekerRecommendations() {
   const [resumes, setResumes] = useState([])
   const [selectedResume, setSelectedResume] = useState('')
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
   const [noResume, setNoResume] = useState(false)
   const [applyTarget, setApplyTarget] = useState(null)
@@ -43,11 +44,14 @@ export default function SeekerRecommendations() {
     }).catch(() => [])
   }, [selectedResume])
 
-  const fetchRecommendations = useCallback(async () => {
-    setLoading(true)
+  const fetchRecommendations = useCallback(async (useAi = false) => {
+    if (useAi) setRefreshing(true)
+    else setLoading(true)
     setError('')
     try {
-      const res = await matchingApi.recommendations(selectedResume ? { resume_id: selectedResume } : {})
+      const payload = selectedResume ? { resume_id: selectedResume } : {}
+      if (useAi) payload.use_ai = true
+      const res = await matchingApi.recommendations(payload)
       setRecommendations(res.data)
       setNoResume(false)
     } catch (err) {
@@ -58,6 +62,7 @@ export default function SeekerRecommendations() {
         setError(getApiError(err, 'Failed to load recommendations.'))
       }
     } finally {
+      setRefreshing(false)
       setLoading(false)
     }
   }, [selectedResume])
@@ -151,7 +156,14 @@ export default function SeekerRecommendations() {
               </option>
             ))}
           </select>
-          <button className="btn btn-secondary btn-sm" onClick={fetchRecommendations}>Refresh</button>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => fetchRecommendations(true)}
+            disabled={refreshing || loading}
+          >
+            {refreshing ? <span className="spinner" /> : <RefreshIcon size={14} />}
+            {refreshing ? 'AI Rechecking...' : 'Refresh with AI'}
+          </button>
         </div>
       )}
 

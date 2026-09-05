@@ -41,6 +41,11 @@ class Job(models.Model):
     skills_required = models.JSONField(default=list, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
     is_active = models.BooleanField(default=True)
+
+    # AI analysis results (persisted from /api/ai/jobs/)
+    ai_analyzed = models.BooleanField(default=False)
+    ai_analysis = models.JSONField(default=dict, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

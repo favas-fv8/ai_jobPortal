@@ -17,6 +17,7 @@ import AdminApplications from './pages/admin/AdminApplications'
 import RecruiterDashboard from './pages/recruiter/RecruiterDashboard'
 import RecruiterJobs from './pages/recruiter/RecruiterJobs'
 import RecruiterNewJob from './pages/recruiter/RecruiterNewJob'
+import RecruiterJobDetail from './pages/recruiter/RecruiterJobDetail'
 import RecruiterApplicants from './pages/recruiter/RecruiterApplicants'
 
 // Job seeker pages
@@ -72,6 +73,7 @@ export default function App() {
       >
         <Route index element={<RecruiterDashboard />} />
         <Route path="jobs" element={<RecruiterJobs />} />
+        <Route path="jobs/:id" element={<RecruiterJobDetail />} />
         <Route path="new-job" element={<RecruiterNewJob />} />
         <Route path="applicants" element={<RecruiterApplicants />} />
       </Route>

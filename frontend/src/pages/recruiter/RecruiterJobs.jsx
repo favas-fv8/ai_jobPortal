@@ -8,7 +8,7 @@ import Badge from '../../components/ui/Badge'
 import Modal from '../../components/ui/Modal'
 import JobForm from '../../components/JobForm'
 import {
-  PlusIcon, BriefcaseIcon, EditIcon, TrashIcon, SendIcon, LocationIcon,
+  PlusIcon, BriefcaseIcon, EditIcon, TrashIcon, SendIcon, SparklesIcon, EyeIcon,
 } from '../../components/Icons'
 import {
   formatDate, formatSalary, jobTypeLabel, experienceLevelLabel, statusBadgeColor,
@@ -87,7 +87,14 @@ export default function RecruiterJobs() {
                   <h3 className="job-title">{job.title}</h3>
                   <div className="job-company">{job.company}</div>
                 </div>
-                <Badge color={statusBadgeColor[job.status]}>{job.status}</Badge>
+                <div className="flex gap-1 flex-wrap" style={{ justifyContent: 'flex-end' }}>
+                  {job.ai_analyzed && (
+                    <Badge color="primary">
+                      <SparklesIcon size={12} style={{ marginRight: 4 }} /> AI Analyzed
+                    </Badge>
+                  )}
+                  <Badge color={statusBadgeColor[job.status]}>{job.status}</Badge>
+                </div>
               </div>
               <div className="job-meta">
                 <Badge color="secondary">{jobTypeLabel[job.job_type] || job.job_type}</Badge>
@@ -100,8 +107,21 @@ export default function RecruiterJobs() {
                   <SendIcon size={12} style={{ marginRight: 4 }} /> {job.application_count || 0} applications
                 </span>
               </div>
+              {job.ai_analyzed && job.ai_analysis?.required_skills?.length > 0 && (
+                <div className="skills-list">
+                  {job.ai_analysis.required_skills.slice(0, 3).map((s, i) => (
+                    <span key={i} className="skill-chip neutral">{s}</span>
+                  ))}
+                  {job.ai_analysis.required_skills.length > 3 && (
+                    <span className="skill-chip neutral">+{job.ai_analysis.required_skills.length - 3}</span>
+                  )}
+                </div>
+              )}
               <div className="divider" style={{ margin: '8px 0' }} />
               <div className="flex flex-wrap gap-1">
+                <Link to={`/recruiter/jobs/${job.id}`} className="btn btn-sm btn-outline">
+                  <EyeIcon size={14} /> View Details
+                </Link>
                 <Link to={`/recruiter/applicants?job=${job.id}`} className="btn btn-sm btn-secondary">
                   <SendIcon size={14} /> View Applicants
                 </Link>

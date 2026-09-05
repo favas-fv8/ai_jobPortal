@@ -10,6 +10,7 @@ const emptyForm = {
   location: '',
   job_type: 'full_time',
   experience_level: 'mid',
+  status: 'open',
   salary_min: '',
   salary_max: '',
   requirements_text: '',
@@ -45,17 +46,20 @@ export default function JobForm({ initial, onSuccess, submitLabel = 'Create Job'
     }
     setAnalyzing(true)
     try {
-      const jobRes = await jobsApi.create({
+      const payload = {
         ...form,
         requirements: form.requirements_text.split('\n').filter((r) => r.trim()),
         salary_min: form.salary_min || null,
         salary_max: form.salary_max || null,
-      })
+      }
+      const jobRes = initial
+        ? await jobsApi.update(initial.id, payload)
+        : await jobsApi.create(payload)
       const res = await jobsApi.analyze(jobRes.data.id)
       setAiRequirements(res.data)
-      // Preselect skills
-      alert('Job created and analyzed successfully.')
-      onSuccess && onSuccess(jobRes.data)
+      const fresh = await jobsApi.get(jobRes.data.id)
+      alert(initial ? 'Job updated and analyzed successfully.' : 'Job created and analyzed successfully.')
+      onSuccess && onSuccess(fresh.data)
     } catch (err) {
       setError(getApiError(err, 'Failed to create and analyze job.'))
     } finally {
@@ -126,6 +130,15 @@ export default function JobForm({ initial, onSuccess, submitLabel = 'Create Job'
             {Object.entries(jobTypeLabel).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </div>
+      </div>
+
+      <div className="form-group">
+        <label className="form-label">Status</label>
+        <select name="status" className="form-control" value={form.status} onChange={handleChange}>
+          <option value="open">Open</option>
+          <option value="closed">Closed</option>
+        </select>
+        <div className="form-hint">Open jobs are visible to job seekers and included in recommendations.</div>
       </div>
 
       <div className="grid grid-3">

@@ -9,7 +9,7 @@ import MatchScore from '../../components/ui/MatchScore'
 import {
   SendIcon, EyeIcon, XIcon,
 } from '../../components/Icons'
-import { formatDateTime, applicationStatusLabel, getApiError } from '../../utils/helpers'
+import { formatDateTime, applicationStatusLabel, getApiError, statusBadgeColor } from '../../utils/helpers'
 
 const statusBadgeMap = {
   submitted: 'info',
@@ -99,7 +99,12 @@ export default function SeekerApplications() {
                       onClick={() => navigate(`/seeker/applications/${a.id}`)}
                       title="View application details"
                     >
-                      <td className="bold text-sm">{a.job_title}</td>
+                      <td className="bold text-sm">
+                        {a.job_title}
+                        {a.job_status === 'closed' && (
+                          <span className="text-xs muted" style={{ marginLeft: 6 }}>(closed)</span>
+                        )}
+                      </td>
                       <td className="text-sm">{a.job_company}</td>
                       <td className="text-sm muted">{formatDateTime(a.created_at)}</td>
                       <td><Badge color={statusBadgeMap[a.status] || 'secondary'}>{applicationStatusLabel[a.status] || a.status}</Badge></td>

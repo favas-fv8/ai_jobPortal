@@ -126,3 +126,6 @@ export const PhoneIcon = (p) => (
 export const BuildingIcon2 = (p) => (
   <Icon {...p} path={<><rect x="4" y="2" width="16" height="20" rx="2" /><path d="M9 22v-4h6v4" /><path d="M8 6h.01M16 6h.01M12 6h.01M8 10h.01M16 10h.01M12 10h.01M8 14h.01M16 14h.01M12 14h.01" /></>} />
 )
+export const RefreshIcon = (p) => (
+  <Icon {...p} path={<><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></>} />
+)

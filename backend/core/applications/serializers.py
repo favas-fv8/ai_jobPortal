@@ -6,16 +6,18 @@ from core.jobs.models import Job
 class ApplicationSerializer(serializers.ModelSerializer):
     job_title = serializers.CharField(source='job.title', read_only=True)
     job_company = serializers.CharField(source='job.company', read_only=True)
+    job_status = serializers.CharField(source='job.status', read_only=True)
     applicant_name = serializers.CharField(source='applicant.get_full_name', read_only=True)
     applicant_username = serializers.CharField(source='applicant.username', read_only=True)
     recruiter_id = serializers.UUIDField(source='job.recruiter_id', read_only=True)
 
     class Meta:
         model = Application
-        fields = ['id', 'job', 'job_title', 'job_company', 'applicant', 'applicant_name',
-                  'applicant_username', 'recruiter_id', 'resume', 'cover_letter', 'status',
-                  'notes', 'match_score', 'matched_skills', 'missing_skills', 'ai_analysis',
-                  'is_ai_analyzed', 'created_at', 'updated_at']
+        fields = ['id', 'job', 'job_title', 'job_company', 'job_status', 'applicant',
+                  'applicant_name', 'applicant_username', 'recruiter_id', 'resume',
+                  'cover_letter', 'status', 'notes', 'match_score', 'matched_skills',
+                  'missing_skills', 'ai_analysis', 'is_ai_analyzed',
+                  'created_at', 'updated_at']
         read_only_fields = ['id', 'applicant', 'match_score', 'matched_skills',
                             'missing_skills', 'ai_analysis', 'is_ai_analyzed',
                             'created_at', 'updated_at']

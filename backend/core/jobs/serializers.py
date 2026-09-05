@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.db.models import Q
 from .models import Job, JobSkill
 
 
@@ -18,8 +19,10 @@ class JobSerializer(serializers.ModelSerializer):
         fields = ['id', 'recruiter', 'recruiter_name', 'title', 'description', 'company',
                   'location', 'job_type', 'experience_level', 'salary_min', 'salary_max',
                   'requirements', 'responsibilities', 'skills_required', 'status',
-                  'is_active', 'skills', 'application_count', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'recruiter', 'application_count', 'created_at', 'updated_at']
+                  'is_active', 'ai_analyzed', 'ai_analysis', 'skills', 'application_count',
+                  'created_at', 'updated_at']
+        read_only_fields = ['id', 'recruiter', 'application_count', 'ai_analyzed',
+                            'ai_analysis', 'created_at', 'updated_at']
 
 
 class JobCreateSerializer(serializers.ModelSerializer):
@@ -35,7 +38,35 @@ class JobCreateSerializer(serializers.ModelSerializer):
             if attrs['salary_min'] > attrs['salary_max']:
                 raise serializers.ValidationError(
                     {'salary_min': 'Salary minimum cannot be greater than salary maximum.'})
+        self._check_duplicate(attrs)
         return attrs
+
+    def _check_duplicate(self, attrs):
+        title = (attrs.get('title') or '').strip()
+        company = (attrs.get('company') or '').strip()
+        description = (attrs.get('description') or '').strip()
+        if not (title and company and description):
+            return
+
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return
+
+        existing = (
+            Job.objects.filter(
+                recruiter=request.user,
+                title__iexact=title,
+                company__iexact=company,
+                description__iexact=description,
+            )
+            .exclude(is_active=False)
+        )
+        if self.instance:
+            existing = existing.exclude(id=self.instance.id)
+
+        if existing.exists():
+            raise serializers.ValidationError(
+                {'title': 'A job with the same title, company, and description already exists. Duplicate job postings are not allowed.'})
 
     def create(self, validated_data):
         request = self.context.get('request')

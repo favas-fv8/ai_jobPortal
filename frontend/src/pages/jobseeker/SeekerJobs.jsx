@@ -12,6 +12,7 @@ import {
 } from '../../components/Icons'
 import {
   formatDate, formatSalary, jobTypeLabel, experienceLevelLabel, getApiError,
+  statusBadgeColor,
 } from '../../utils/helpers'
 
 export default function SeekerJobs() {
@@ -165,7 +166,7 @@ export default function SeekerJobs() {
                 <Badge color="secondary">{jobTypeLabel[job.job_type] || job.job_type}</Badge>
                 <Badge color="secondary">{experienceLevelLabel[job.experience_level] || job.experience_level}</Badge>
                 {job.location && <Badge color="secondary">{job.location}</Badge>}
-                <Badge color="success">Open</Badge>
+<Badge color={statusBadgeColor[job.status]}>{job.status}</Badge>
               </div>
               <p className="text-sm muted" style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                 {job.description}
@@ -202,7 +203,7 @@ export default function SeekerJobs() {
                 <div className="job-company text-lg bold">{viewTarget.company}</div>
                 {viewTarget.location && <div className="text-sm muted">{viewTarget.location}</div>}
               </div>
-              <Badge color="success">Open</Badge>
+              <Badge color={statusBadgeColor[viewTarget.status]}>{viewTarget.status}</Badge>
             </div>
             <div className="job-meta mb-3">
               <Badge color="secondary">{jobTypeLabel[viewTarget.job_type] || viewTarget.job_type}</Badge>

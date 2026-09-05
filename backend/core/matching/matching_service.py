@@ -85,10 +85,9 @@ def calculate_match_score(matched_count, required_count, candidate_skills,
     a bonus for preferred skills the candidate also possesses.
     """
     if required_count == 0:
-        # No structured required skills; fall back to overall ratio
-        if not candidate_skills:
-            return 0.0
-        return 50.0
+        # No required skills to match against; no skill-based match data
+        # exists, so reflect that with a neutral score of 0.
+        return 0.0
 
     base = (matched_count / required_count) * 100.0
 

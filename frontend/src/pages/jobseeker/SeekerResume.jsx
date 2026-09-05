@@ -142,30 +142,6 @@ export default function SeekerResume() {
                 </div>
               </div>
 
-              {r.is_analyzed && (
-                <>
-                  <div className="mt-2">
-                    <div className="text-xs muted mb-1">Extracted by AI</div>
-                    {r.full_name && <div className="bold text-sm">{r.full_name}</div>}
-                    {(r.email || r.phone) && <div className="text-xs muted">{r.email} {r.phone}</div>}
-                  </div>
-                  <div className="mt-2">
-                    <div className="text-sm bold mb-1">Skills ({r.skills?.length || 0})</div>
-                    <SkillList skills={r.skills} type="neutral" />
-                  </div>
-                  {r.education?.length > 0 && (
-                    <div className="mt-2">
-                      <div className="text-sm bold mb-1">Education</div>
-                      <ul className="text-sm muted" style={{ marginLeft: 18 }}>
-                        {r.education.map((ed, i) => (
-                          <li key={i}>{ed.degree} - {ed.institution} {ed.years}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </>
-              )}
-
               <div className="divider" style={{ margin: '8px 0' }} />
               <div className="flex gap-2 flex-wrap">
                 <button className="btn btn-sm btn-primary" onClick={() => setSelected(r)}>

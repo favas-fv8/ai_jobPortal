@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, permissions, filters
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from django.db.models import Count
@@ -48,8 +49,22 @@ class JobViewSet(viewsets.ModelViewSet):
         if self.request.user.is_authenticated and not self.request.user.is_admin_user:
             if self.request.user.is_recruiter:
                 qs = qs.filter(recruiter=self.request.user)
+            else:
+                qs = qs.filter(status='open', is_active=True)
 
         return qs
+
+    def get_object(self):
+        pk = self.kwargs.get('pk')
+        qs = Job.objects.annotate(
+            application_count=Count('applications')
+        ).prefetch_related('job_skills')
+
+        if self.request.user.is_admin_user:
+            return get_object_or_404(qs, pk=pk)
+        if self.request.user.is_recruiter:
+            return get_object_or_404(qs.filter(recruiter=self.request.user), pk=pk)
+        return get_object_or_404(qs, pk=pk)
 
     def perform_destroy(self, instance):
         instance.delete()

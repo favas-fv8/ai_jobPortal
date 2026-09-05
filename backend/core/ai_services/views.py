@@ -33,9 +33,19 @@ class JobAnalysisViewSet(viewsets.ViewSet):
         except Job.DoesNotExist:
             return Response({'error': 'Job not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+        # Permission check: only the owning recruiter or an admin may analyze
+        if not (request.user.is_admin_user or job.recruiter == request.user):
+            return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+
         job_text = f"{job.title}\n{job.description}\n" \
                    f"Requirements: {json_or_empty(job.requirements)}"
         result = analyze_job_description(job_text)
+
+        # Persist the analysis on the job so AI status can be shown on the UI
+        job.ai_analyzed = True
+        job.ai_analysis = result
+        job.save(update_fields=['ai_analyzed', 'ai_analysis', 'updated_at'])
+
         return Response(result)
 
 

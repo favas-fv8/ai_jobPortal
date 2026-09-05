@@ -7,7 +7,20 @@ from core.jobs.models import Job
 from core.resumes.models import Resume
 from core.applications.models import Application
 from core.ai_services.parser import extract_resume_text
+from core.ai_services.services import analyze_job_application
 from .matching_service import match_resume_to_job, compare_skills, extract_keywords
+
+
+def _job_text(job):
+    reqs = ', '.join(str(r) for r in (job.requirements or []))
+    return f"{job.title}\n{job.description}\nRequirements: {reqs}"
+
+
+def _coerce_score(value):
+    try:
+        return min(100.0, max(0.0, float(value)))
+    except (TypeError, ValueError):
+        return 0.0
 
 
 def _candidate_skills(resume):
@@ -34,6 +47,7 @@ def _candidate_skills(resume):
 
 class RecommendationSerializer(serializers.Serializer):
     resume_id = serializers.UUIDField(required=False, allow_null=True)
+    use_ai = serializers.BooleanField(required=False, default=False)
 
 
 class GapSerializer(serializers.Serializer):
@@ -78,15 +92,38 @@ class MatchingViewSet(viewsets.ViewSet):
             )
 
         candidate_skills = _candidate_skills(resume)
+        resume_text = ''
+        if resume.parsed_raw_text:
+            resume_text = resume.parsed_raw_text
+        elif resume.file and resume.file.path:
+            try:
+                resume_text = extract_resume_text(resume.file.path, resume.file_format)
+            except Exception:
+                resume_text = ''
+
+        use_ai = serializer.validated_data.get('use_ai', False)
         open_jobs = Job.objects.filter(is_active=True, status='open')
 
         results = []
         for job in open_jobs:
-            match = match_resume_to_job(
-                candidate_skills,
-                job_required_skills=job.skills_required,
-                job_requirements_text=job.description,
-            )
+            match = None
+            if use_ai and resume_text:
+                try:
+                    ai = analyze_job_application(
+                        _job_text(job), resume_text, candidate_skills)
+                    match = {
+                        'match_score': _coerce_score(ai.get('match_score')),
+                        'matched_skills': ai.get('matched_skills', []),
+                        'missing_skills': ai.get('missing_skills', []),
+                    }
+                except Exception:
+                    match = None
+            if match is None:
+                match = match_resume_to_job(
+                    candidate_skills,
+                    job_required_skills=job.skills_required,
+                    job_requirements_text=job.description,
+                )
             results.append({
                 'job_id': str(job.id),
                 'job_title': job.title,
