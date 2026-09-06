@@ -10,7 +10,9 @@ from core.applications.services import ensure_application_match
 from core.ai_services.parser import extract_resume_text
 from core.ai_services.services import analyze_job_application
 from .models import Recommendation
-from .matching_service import match_resume_to_job, compare_skills, extract_keywords
+from .matching_service import (
+    match_resume_to_job, compare_skills, extract_keywords, resolve_required_skills,
+)
 
 
 def _job_text(job):
@@ -181,7 +183,7 @@ class MatchingViewSet(viewsets.ViewSet):
             else:
                 match = match_resume_to_job(
                     candidate_skills,
-                    job_required_skills=job.skills_required,
+                    job_required_skills=resolve_required_skills(job),
                     job_requirements_text=job.description,
                 )
                 rec = _save_recommendation(resume, job, match, 'local')
@@ -229,7 +231,7 @@ class MatchingViewSet(viewsets.ViewSet):
         if saved is None:
             match = match_resume_to_job(
                 candidate_skills,
-                job_required_skills=job.skills_required,
+                job_required_skills=resolve_required_skills(job),
                 job_requirements_text=job.description,
             )
             saved = _save_recommendation(resume, job, match, 'local')

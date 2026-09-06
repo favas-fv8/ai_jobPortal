@@ -38,6 +38,10 @@ def skill_similarity(s1, s2):
     # Direct token overlap
     t1, t2 = set(n1.split()), set(n2.split())
     if t1 and t2:
+        # One is a multi-word phrase of the other (e.g. "communication skill"
+        # vs "communication") — treat as equivalent.
+        if t1 <= t2 or t2 <= t1:
+            return 1.0
         overlap = len(t1 & t2)
         if overlap > 0:
             return overlap / max(len(t1), len(t2))
@@ -151,3 +155,20 @@ def extract_keywords(text):
         if skill in text_lower:
             found.append(skill.title())
     return found
+
+
+def resolve_required_skills(job):
+    """Determine the required-skill list for a job, by priority:
+    structured ``skills_required`` -> AI-analyzed ``required_skills`` -> the
+    job's ``requirements`` field.
+
+    Shared by the recommendation and application match paths so both pages
+    produce identical scores for jobs that have not been AI-analyzed.
+    """
+    required = list(job.skills_required or [])
+    if not required:
+        analysis = job.ai_analysis or {}
+        required = list(analysis.get('required_skills') or [])
+    if not required:
+        required = list(job.requirements or [])
+    return required

@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 from .models import Application
 from core.jobs.models import Job
@@ -32,11 +33,35 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
         job = attrs.get('job')
         if not job or not job.is_active or job.status != 'open':
             raise serializers.ValidationError({'job': 'This job is not accepting applications.'})
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            existing = Application.objects.filter(job=job, applicant=request.user).first()
+            if existing and existing.status != 'withdrawn':
+                raise serializers.ValidationError(
+                    'You have already applied to this job. Please cancel your existing '
+                    'application first, then you can apply again.'
+                )
+            if existing:
+                self.context['withdrawn_application'] = existing
         return attrs
 
     def create(self, validated_data):
         request = self.context.get('request')
         validated_data['applicant'] = request.user
+        existing = self.context.get('withdrawn_application')
+        if existing:
+            existing.status = 'submitted'
+            existing.resume = validated_data.get('resume', existing.resume)
+            existing.cover_letter = validated_data.get('cover_letter', existing.cover_letter)
+            existing.is_ai_analyzed = False
+            existing.match_source = 'local'
+            existing.match_score = None
+            existing.matched_skills = []
+            existing.missing_skills = []
+            existing.ai_analysis = {}
+            existing.created_at = timezone.now()
+            existing.save()
+            return existing
         return super().create(validated_data)
 
 
