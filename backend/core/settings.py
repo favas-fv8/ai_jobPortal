@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'core.jobs',
     'core.applications',
     'core.resumes',
+    'core.matching',
 ]
 
 MIDDLEWARE = [

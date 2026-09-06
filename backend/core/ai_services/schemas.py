@@ -144,6 +144,37 @@ JOB_APPLICATION_MATCH_SCHEMA = {
 }
 
 
+RESUME_VALIDATION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "is_resume": {"type": "boolean"},
+        "reason": {"type": "string"}
+    }
+}
+
+
+RESUME_VALIDATION_PROMPT = """You are an expert document classifier. Determine whether the following document text is a person's resume/CV used for a job application.
+
+A resume/CV typically contains sections such as contact details, a professional summary, work experience, education, and skills.
+
+The document is NOT a valid resume if it is, for example:
+- an image-only or scanned file with no readable text
+- a presentation or slides (PPT) deck
+- a video transcript or script
+- an academic paper, article, invoice, contract, report, or other non-resume document
+- empty or unreadable content
+
+Return ONLY valid JSON matching this schema:
+{schema}
+
+Document Text:
+---
+{document_text}
+---
+
+Respond with "is_resume" = true only if the document is genuinely a resume/CV. Always provide a clear, friendly "reason" explaining the decision."""
+
+
 RESUME_JOB_MATCH_SCHEMA = {
     "type": "object",
     "properties": {

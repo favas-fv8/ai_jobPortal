@@ -7,7 +7,7 @@ import EmptyState from '../../components/ui/EmptyState'
 import Badge from '../../components/ui/Badge'
 import MatchScore from '../../components/ui/MatchScore'
 import {
-  SendIcon, EyeIcon, XIcon,
+  SendIcon, EyeIcon, XIcon, TrashIcon,
 } from '../../components/Icons'
 import { formatDateTime, applicationStatusLabel, getApiError, statusBadgeColor } from '../../utils/helpers'
 
@@ -27,6 +27,7 @@ export default function SeekerApplications() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [cancellingId, setCancellingId] = useState(null)
+  const [deletingId, setDeletingId] = useState(null)
 
   const fetchApplications = useCallback(() => {
     setLoading(true)
@@ -50,6 +51,20 @@ export default function SeekerApplications() {
       alert(getApiError(err, 'Failed to cancel application.'))
     } finally {
       setCancellingId(null)
+    }
+  }
+
+  const handleDelete = async (app) => {
+    if (!window.confirm(`Delete your application for "${app.job_title}"? This action cannot be undone.`)) return
+    setDeletingId(app.id)
+    try {
+      await applicationsApi.delete(app.id)
+      setApplications((prev) => prev.filter((a) => a.id !== app.id))
+      alert('Application deleted.')
+    } catch (err) {
+      alert(getApiError(err, 'Failed to delete application.'))
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -109,7 +124,7 @@ export default function SeekerApplications() {
                       <td className="text-sm muted">{formatDateTime(a.created_at)}</td>
                       <td><Badge color={statusBadgeMap[a.status] || 'secondary'}>{applicationStatusLabel[a.status] || a.status}</Badge></td>
                       <td>
-                        {a.is_ai_analyzed && a.match_score != null ? (
+                        {a.match_score != null ? (
                           <MatchScore score={a.match_score} showLabel={false} />
                         ) : (
                           <span className="text-xs muted">Pending recruiter review</span>
@@ -129,6 +144,18 @@ export default function SeekerApplications() {
                             >
                               {cancellingId === a.id ? <span className="spinner" /> : <XIcon size={14} />}
                               {cancellingId === a.id ? '...' : 'Cancel'}
+                            </button>
+                          )}
+                          {isWithdrawn && (
+                            <button
+                              className="btn btn-sm btn-outline"
+                              onClick={() => handleDelete(a)}
+                              disabled={deletingId === a.id}
+                              title="Delete application"
+                              aria-label="Delete application"
+                              style={{ padding: 0, width: 28, height: 28, color: 'var(--danger)' }}
+                            >
+                              {deletingId === a.id ? <span className="spinner" /> : <TrashIcon size={14} />}
                             </button>
                           )}
                         </div>

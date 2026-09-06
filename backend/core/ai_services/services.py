@@ -7,7 +7,31 @@ from .schemas import (
     JOB_ANALYSIS_PROMPT,
     JOB_APPLICATION_MATCH_PROMPT,
     JOB_APPLICATION_MATCH_SCHEMA,
+    RESUME_VALIDATION_SCHEMA,
+    RESUME_VALIDATION_PROMPT,
 )
+
+
+def validate_resume_text(document_text):
+    """Determine whether the extracted document text is actually a resume.
+
+    Uses Gemini to classify the document and explain the decision. When Gemini
+    is unavailable, a lightweight local heuristic is used instead.
+    """
+    text = (document_text or '').strip()
+    client = get_gemini_client()
+    if not client.available:
+        return _local_resume_validation(text)
+
+    prompt = RESUME_VALIDATION_PROMPT.format(
+        schema=json.dumps(RESUME_VALIDATION_SCHEMA),
+        document_text=text[:40000] or '(empty)',
+    )
+    result = client.generate_content(prompt, response_schema=RESUME_VALIDATION_SCHEMA)
+    result = dict(result or {})
+    result['is_resume'] = bool(result.get('is_resume'))
+    result.setdefault('reason', '')
+    return result
 
 
 def analyze_resume(resume_text):
@@ -57,6 +81,27 @@ def analyze_job_application(job_description, resume_text, candidate_skills=None)
 # Local fallback extraction (used only when Gemini is unavailable).
 # These are intentionally simple and deterministic.
 # ---------------------------------------------------------------------------
+
+def _local_resume_validation(text):
+    if not text:
+        return {
+            'is_resume': False,
+            'reason': 'This document appears to be empty or image-only (scanned) with no readable text. Please upload a text-based resume.',
+        }
+    keywords = [
+        'experience', 'education', 'skill', 'work', 'employment', 'resume',
+        'curriculum', 'objective', 'summary', 'project', 'certification',
+        'contact', 'email', 'linkedin', 'phone',
+    ]
+    low = text.lower()
+    hits = sum(1 for k in keywords if k in low)
+    if hits < 3 or len(text) < 100:
+        return {
+            'is_resume': False,
+            'reason': 'This document does not appear to be a resume (image, video transcript, presentation, or other document). Please upload a real resume.',
+        }
+    return {'is_resume': True, 'reason': ''}
+
 
 def _local_resume_extraction(text):
     return {

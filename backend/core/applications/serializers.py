@@ -16,11 +16,11 @@ class ApplicationSerializer(serializers.ModelSerializer):
         fields = ['id', 'job', 'job_title', 'job_company', 'job_status', 'applicant',
                   'applicant_name', 'applicant_username', 'recruiter_id', 'resume',
                   'cover_letter', 'status', 'notes', 'match_score', 'matched_skills',
-                  'missing_skills', 'ai_analysis', 'is_ai_analyzed',
+                  'missing_skills', 'ai_analysis', 'is_ai_analyzed', 'match_source',
                   'created_at', 'updated_at']
         read_only_fields = ['id', 'applicant', 'match_score', 'matched_skills',
                             'missing_skills', 'ai_analysis', 'is_ai_analyzed',
-                            'created_at', 'updated_at']
+                            'match_source', 'created_at', 'updated_at']
 
 
 class ApplicationCreateSerializer(serializers.ModelSerializer):

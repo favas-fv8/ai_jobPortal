@@ -8,4 +8,5 @@ export const applicationsApi = {
   analyzeWithAi: (id) => api.post(`/applications/${id}/analyze_with_ai/`),
   myApplications: () => api.get('/applications/my_applications/'),
   withdraw: (id) => api.post(`/applications/${id}/withdraw/`),
+  delete: (id) => api.delete(`/applications/${id}/`),
 }

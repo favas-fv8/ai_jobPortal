@@ -1,5 +1,6 @@
 from django.db.models import Count
 from django.db.models.functions import Lower
+import logging
 from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -9,8 +10,11 @@ from .models import Application
 from .serializers import (
     ApplicationSerializer, ApplicationCreateSerializer, ApplicationStatusUpdateSerializer
 )
+from .services import ensure_application_match
 from core.ai_services.services import analyze_job_application
 from core.ai_services.parser import extract_resume_text
+
+logger = logging.getLogger(__name__)
 
 
 class IsRecruiterForJob(permissions.BasePermission):
@@ -56,8 +60,27 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             return Application.objects.filter(job__recruiter=user)
         return Application.objects.filter(applicant=user)
 
+    def _ensure_matches(self, queryset):
+        """Backfill local match data for applications that lack it, using
+        already-saved resume/job analysis data (no Gemini call)."""
+        apps = queryset.filter(is_ai_analyzed=False).select_related('resume', 'job')
+        for application in apps:
+            ensure_application_match(application)
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        self._ensure_matches(queryset)
+        return super().list(request, *args, **kwargs)
+
+    def retrieve(self, request, *args, **kwargs):
+        application = self.get_object()
+        ensure_application_match(application)
+        return Response(ApplicationSerializer(application).data)
+
     def perform_create(self, serializer):
-        serializer.save(applicant=self.request.user)
+        application = serializer.save(applicant=self.request.user)
+        ensure_application_match(application)
 
     @action(detail=True, methods=['post'])
     def analyze_with_ai(self, request, pk=None):
@@ -89,11 +112,13 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             application.missing_skills = result.get('missing_skills', [])
             application.ai_analysis = result
             application.is_ai_analyzed = True
+            application.match_source = 'ai'
             application.save()
 
             return Response(ApplicationSerializer(application).data)
-        except Exception as e:
-            return Response({'error': f'AI analysis failed: {str(e)}'},
+        except Exception:
+            logger.exception('AI analysis failed for application %s', application.pk)
+            return Response({'error': 'AI analysis failed. Please try again later.'},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     # For job seekers, list their own applications
@@ -101,6 +126,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def my_applications(self, request):
         applications = Application.objects.filter(applicant=request.user)
+        self._ensure_matches(applications)
         serializer = ApplicationSerializer(applications, many=True)
         return Response(serializer.data)
 

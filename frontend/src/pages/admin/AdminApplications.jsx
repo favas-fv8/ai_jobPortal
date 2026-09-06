@@ -100,7 +100,7 @@ export default function AdminApplications() {
                     <td className="text-sm">{a.job_title}<div className="text-xs muted">{a.job_company}</div></td>
                     <td><Badge color={statusBadgeMap[a.status] || 'secondary'}>{applicationStatusLabel[a.status] || a.status}</Badge></td>
                     <td>
-                      {a.is_ai_analyzed && a.match_score != null ? (
+                      {a.match_score != null ? (
                         <MatchScore score={a.match_score} showLabel={false} />
                       ) : (
                         <span className="text-xs muted">Not analyzed</span>

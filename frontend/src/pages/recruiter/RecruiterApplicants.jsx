@@ -10,7 +10,7 @@ import Badge from '../../components/ui/Badge'
 import MatchScore from '../../components/ui/MatchScore'
 import Modal from '../../components/ui/Modal'
 import {
-  UsersIcon, SparklesIcon, FilterIcon, CheckIcon, XIcon, DownloadIcon, BriefcaseIcon,
+  UsersIcon, SparklesIcon, FilterIcon, CheckIcon, XIcon, DownloadIcon, BriefcaseIcon, TrashIcon,
 } from '../../components/Icons'
 import { formatDateTime, applicationStatusLabel, getApiError } from '../../utils/helpers'
 
@@ -34,12 +34,13 @@ export default function RecruiterApplicants() {
   const [error, setError] = useState('')
   const [selected, setSelected] = useState(null)
   const [analyzing, setAnalyzing] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   const [filters, setFilters] = useState({
     job: searchParams.get('job') || '',
     status: '',
     minScore: '',
-    showAnalyzedOnly: false,
   })
   const [order, setOrder] = useState('-match_score')
 
@@ -56,11 +57,7 @@ export default function RecruiterApplicants() {
     if (filters.minScore) params.min_score = filters.minScore
     matchingApi
       .applicants(params)
-      .then((res) => {
-        let data = res.data
-        if (filters.showAnalyzedOnly) data = data.filter((a) => a.is_ai_analyzed)
-        setApplicants(data)
-      })
+      .then((res) => setApplicants(res.data))
       .catch((err) => setError(getApiError(err, 'Failed to load applicants.')))
       .finally(() => setLoading(false))
   }, [filters, order])
@@ -105,6 +102,20 @@ export default function RecruiterApplicants() {
       if (selected && selected.application_id === id) setSelected({ ...selected, status: newStatus })
     } catch (err) {
       alert(getApiError(err, 'Failed to update status.'))
+    }
+  }
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    try {
+      await applicationsApi.delete(deleteTarget.application_id)
+      setApplicants((prev) => prev.filter((a) => a.application_id !== deleteTarget.application_id))
+      if (selected && selected.application_id === deleteTarget.application_id) setSelected(null)
+      setDeleteTarget(null)
+    } catch (err) {
+      alert(getApiError(err, 'Failed to delete the application.'))
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -154,11 +165,6 @@ export default function RecruiterApplicants() {
           <option value="match_score">Sort: Lowest match</option>
           <option value="-created_at">Sort: Newest</option>
         </select>
-        <label className="flex gap-1" style={{ alignItems: 'center', cursor: 'pointer' }}>
-          <input type="checkbox" checked={filters.showAnalyzedOnly}
-            onChange={(e) => setFilters({ ...filters, showAnalyzedOnly: e.target.checked })} />
-          <span className="text-sm">AI analyzed only</span>
-        </label>
       </div>
 
       {applicants.length === 0 ? (
@@ -205,7 +211,7 @@ export default function RecruiterApplicants() {
                       </td>
                       <td className="text-sm">{a.job_title}</td>
                       <td>
-                        {a.is_ai_analyzed ? (
+                        {a.match_score != null ? (
                           <MatchScore score={a.match_score} showLabel={false} />
                         ) : (
                           <span className="badge badge-secondary">Not analyzed</span>
@@ -228,17 +234,31 @@ export default function RecruiterApplicants() {
                       </td>
                       <td className="text-sm muted">{formatDateTime(a.applied_at)}</td>
                       <td>
-                        {!isWithdrawn && (
+                        <div className="flex gap-1" style={{ alignItems: 'center' }}>
+                          {!isWithdrawn && (
+                            <button
+                              className="btn btn-sm btn-primary"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSelected(a)
+                              }}
+                            >
+                              <SparklesIcon size={13} /> Review
+                            </button>
+                          )}
                           <button
-                            className="btn btn-sm btn-primary"
+                            className="btn btn-sm btn-outline"
+                            title="Delete application"
+                            aria-label="Delete application"
+                            style={{ padding: 0, width: 28, height: 28, color: 'var(--danger)' }}
                             onClick={(e) => {
                               e.stopPropagation()
-                              setSelected(a)
+                              setDeleteTarget(a)
                             }}
                           >
-                            <SparklesIcon size={13} /> Review
+                            <TrashIcon size={14} />
                           </button>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   )
@@ -269,9 +289,9 @@ export default function RecruiterApplicants() {
               </div>
             </div>
 
-            {!selected.is_ai_analyzed && (
+            {selected.match_score == null && (
               <div className="alert alert-info mb-3">
-                This candidate has not been analyzed by AI yet. Run analysis to see their match score.
+                No match data is available for this candidate yet. Run analysis to see their match score.
               </div>
             )}
 
@@ -325,6 +345,19 @@ export default function RecruiterApplicants() {
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete Application" size="sm">
+        <p>
+          Are you sure you want to delete the application of "{deleteTarget?.applicant_name}" for "
+          {deleteTarget?.job_title}"? This action cannot be undone.
+        </p>
+        <div className="flex gap-2 mt-3" style={{ justifyContent: 'flex-end' }}>
+          <button className="btn btn-secondary" onClick={() => setDeleteTarget(null)}>Cancel</button>
+          <button className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
+            {deleting ? 'Deleting...' : 'Delete Application'}
+          </button>
+        </div>
       </Modal>
     </div>
   )

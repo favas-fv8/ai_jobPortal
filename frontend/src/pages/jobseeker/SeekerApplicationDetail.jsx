@@ -102,7 +102,7 @@ export default function SeekerApplicationDetail() {
             <Badge color={statusBadgeMap[application.status] || 'secondary'}>{applicationStatusLabel[application.status] || application.status}</Badge>
           </div>
 
-          {application.is_ai_analyzed && application.match_score != null && (
+          {application.match_score != null && (
             <div className="mb-3">
               <div className="text-sm bold mb-1">AI Match</div>
               <MatchScore score={application.match_score} showLabel={false} />

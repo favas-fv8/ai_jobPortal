@@ -30,6 +30,12 @@ export default function SeekerResume() {
 
   useEffect(() => { fetchResumes() }, [fetchResumes])
 
+  useEffect(() => {
+    if (!error) return
+    const t = setTimeout(() => setError(''), 10000)
+    return () => clearTimeout(t)
+  }, [error])
+
   const handleUpload = async (e) => {
     const file = e.target.files[0]
     if (!file) return
@@ -57,7 +63,10 @@ export default function SeekerResume() {
       fetchResumes()
       alert('Resume analysis completed successfully!')
     } catch (err) {
-      setError(getApiError(err, 'Resume analysis failed. Check that GEMINI_API_KEY is configured on the server.'))
+      const msg = getApiError(err, 'Resume analysis failed. Check that GEMINI_API_KEY is configured on the server.')
+      setError(msg)
+      alert(msg)
+      fetchResumes()
     } finally {
       setAnalyzingId(null)
     }

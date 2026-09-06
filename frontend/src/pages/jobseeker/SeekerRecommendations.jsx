@@ -14,7 +14,7 @@ import {
   SparklesIcon, SendIcon, TargetIcon, CheckIcon, XIcon, BriefcaseIcon,
   EyeIcon, UploadIcon, LocationIcon, RefreshIcon,
 } from '../../components/Icons'
-import { formatDate, formatSalary, jobTypeLabel, experienceLevelLabel, getApiError } from '../../utils/helpers'
+import { formatDate, formatDateTime, formatSalary, jobTypeLabel, experienceLevelLabel, getApiError } from '../../utils/helpers'
 
 export default function SeekerRecommendations() {
   const [recommendations, setRecommendations] = useState(null)
@@ -130,7 +130,11 @@ export default function SeekerRecommendations() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedResume, noResume])
 
-  if (loading) return <LoadingState message="Generating AI recommendations..." />
+  if (loading) return <LoadingState message="Loading recommendations..." />
+
+  const lastAnalyzedAt = recommendations?.length
+    ? recommendations.reduce((acc, r) => (r.analyzed_at > acc ? r.analyzed_at : acc), '')
+    : null
 
   return (
     <div>
@@ -141,6 +145,7 @@ export default function SeekerRecommendations() {
           </h1>
           <p className="page-subtitle">
             Matches your resume's skills against available jobs with match scores and skill-gap analysis.
+            Results are saved from your last analysis and update only when you re-run it.
           </p>
         </div>
       </div>
@@ -164,6 +169,11 @@ export default function SeekerRecommendations() {
             {refreshing ? <span className="spinner" /> : <RefreshIcon size={14} />}
             {refreshing ? 'AI Rechecking...' : 'Refresh with AI'}
           </button>
+          {lastAnalyzedAt && (
+            <span className="text-xs muted" style={{ marginLeft: 'auto' }}>
+              Last analyzed {formatDateTime(lastAnalyzedAt)}
+            </span>
+          )}
         </div>
       )}
 
@@ -200,7 +210,19 @@ export default function SeekerRecommendations() {
                   <h3 className="job-title">{rec.job_title}</h3>
                   <div className="job-company">{rec.job_company} {rec.job_location ? `• ${rec.job_location}` : ''}</div>
                 </div>
-                <MatchScore score={rec.match_score} />
+                <div className="flex gap-2" style={{ alignItems: 'center' }}>
+                  <MatchScore score={rec.match_score} />
+                  {rec.source === 'ai'
+                    ? (
+                      <Badge color="primary" data-testid={`badge-${rec.job_id}`}>
+                        <SparklesIcon size={11} style={{ marginRight: 4 }} /> AI analysis
+                      </Badge>
+                    ) : (
+                      <Badge color="secondary" data-testid={`badge-${rec.job_id}`}>
+                        Auto match
+                      </Badge>
+                    )}
+                </div>
               </div>
               <div className="job-meta">
                 <Badge color="secondary">{jobTypeLabel[rec.job_type] || rec.job_type}</Badge>

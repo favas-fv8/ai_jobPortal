@@ -1,3 +1,4 @@
+import logging
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -6,6 +7,8 @@ from .services import analyze_job_description, analyze_resume, analyze_job_appli
 from .parser import extract_resume_text
 from core.jobs.models import Job
 from core.resumes.models import Resume
+
+logger = logging.getLogger(__name__)
 
 
 class JobAnalysisSerializer(serializers.Serializer):
@@ -39,7 +42,12 @@ class JobAnalysisViewSet(viewsets.ViewSet):
 
         job_text = f"{job.title}\n{job.description}\n" \
                    f"Requirements: {json_or_empty(job.requirements)}"
-        result = analyze_job_description(job_text)
+        try:
+            result = analyze_job_description(job_text)
+        except Exception:
+            logger.exception('AI job analysis failed for job %s', job.pk)
+            return Response({'error': 'AI analysis failed. Please try again later.'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Persist the analysis on the job so AI status can be shown on the UI
         job.ai_analyzed = True
@@ -66,7 +74,12 @@ class ResumeAnalysisViewSet(viewsets.ViewSet):
             return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
 
         text = resume.parsed_raw_text or extract_resume_text(resume.file.path, resume.file_format)
-        result = analyze_resume(text)
+        try:
+            result = analyze_resume(text)
+        except Exception:
+            logger.exception('AI resume analysis failed for resume %s', resume.pk)
+            return Response({'error': 'AI analysis failed. Please try again later.'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response(result)
 
 
@@ -105,7 +118,12 @@ class MatchRequestsViewSet(viewsets.ViewSet):
         resume_text = resume.parsed_raw_text or extract_resume_text(
             resume.file.path, resume.file_format)
 
-        result = analyze_job_application(job_text, resume_text, resume.skills)
+        try:
+            result = analyze_job_application(job_text, resume_text, resume.skills)
+        except Exception:
+            logger.exception('AI match analysis failed for resume %s', resume.pk)
+            return Response({'error': 'AI analysis failed. Please try again later.'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         result['job_id'] = str(job.id)
         result['job_title'] = job.title
         result['job_company'] = job.company

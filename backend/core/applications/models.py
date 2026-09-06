@@ -31,6 +31,11 @@ class Application(models.Model):
     missing_skills = models.JSONField(default=list, blank=True)
     ai_analysis = models.JSONField(default=dict, blank=True)
     is_ai_analyzed = models.BooleanField(default=False)
+    match_source = models.CharField(
+        max_length=10,
+        choices=[('ai', 'AI'), ('local', 'Local')],
+        default='local',
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
