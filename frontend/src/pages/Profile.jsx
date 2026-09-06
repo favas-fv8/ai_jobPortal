@@ -27,6 +27,12 @@ export default function Profile() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
+  const [pwdForm, setPwdForm] = useState({
+    old_password: '', new_password: '', confirm_password: '',
+  })
+  const [pwdErrors, setPwdErrors] = useState({})
+  const [pwdSaving, setPwdSaving] = useState(false)
+  const [showPwd, setShowPwd] = useState(false)
 
   useEffect(() => {
     if (!success) return
@@ -117,6 +123,40 @@ export default function Profile() {
       setError(getApiError(err, 'Failed to update profile.'))
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handlePwdChange = (e) => {
+    setPwdForm({ ...pwdForm, [e.target.name]: e.target.value })
+  }
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault()
+    setError('')
+    setPwdErrors({})
+    setSuccess('')
+    if (pwdForm.new_password !== pwdForm.confirm_password) {
+      setPwdErrors({ confirm_password: 'Passwords do not match.' })
+      return
+    }
+    setPwdSaving(true)
+    try {
+      await authApi.changePassword(pwdForm)
+      setPwdForm({ old_password: '', new_password: '', confirm_password: '' })
+      setShowPwd(false)
+      setSuccess('Password changed successfully.')
+    } catch (err) {
+      const dataErr = err?.response?.data || {}
+      const fieldErr = {}
+      Object.entries(dataErr).forEach(([k, v]) => {
+        if (k !== 'detail' && k !== 'non_field_errors') {
+          fieldErr[k] = Array.isArray(v) ? v.join(', ') : v
+        }
+      })
+      if (Object.keys(fieldErr).length > 0) setPwdErrors(fieldErr)
+      setError(getApiError(err, 'Failed to change password.'))
+    } finally {
+      setPwdSaving(false)
     }
   }
 
@@ -239,6 +279,49 @@ export default function Profile() {
               </div>
             )}
           </div>
+        </div>
+
+        <div className="card card-padded mb-4">
+          <div className="flex gap-2" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 className="card-title mb-0">Security</h3>
+            <button type="button" className="btn btn-secondary btn-sm"
+              onClick={() => { setShowPwd(!showPwd); setPwdErrors({}) }}>
+              {showPwd ? 'Cancel' : 'Change Password'}
+            </button>
+          </div>
+          {showPwd && (
+            <form onSubmit={handleChangePassword} className="mt-3">
+              <div className="form-group">
+                <label className="form-label">Current Password</label>
+                <input type="password" name="old_password" className="form-control"
+                  placeholder="Enter current password" value={pwdForm.old_password}
+                  onChange={handlePwdChange} autoComplete="current-password" />
+                {pwdErrors.old_password && <div className="form-error">{pwdErrors.old_password}</div>}
+              </div>
+              <div className="grid grid-2">
+                <div className="form-group">
+                  <label className="form-label">New Password</label>
+                  <input type="password" name="new_password" className="form-control"
+                    placeholder="At least 8 characters" value={pwdForm.new_password}
+                    onChange={handlePwdChange} autoComplete="new-password" />
+                  {pwdErrors.new_password && <div className="form-error">{pwdErrors.new_password}</div>}
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Confirm New Password</label>
+                  <input type="password" name="confirm_password" className="form-control"
+                    placeholder="Re-enter new password" value={pwdForm.confirm_password}
+                    onChange={handlePwdChange} autoComplete="new-password" />
+                  {pwdErrors.confirm_password && <div className="form-error">{pwdErrors.confirm_password}</div>}
+                </div>
+              </div>
+              <div className="flex gap-2" style={{ justifyContent: 'flex-end' }}>
+                <button type="submit" className="btn btn-primary" disabled={pwdSaving}>
+                  {pwdSaving && <span className="spinner" />}
+                  {pwdSaving ? 'Changing...' : 'Change Password'}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
 
         <div className="flex gap-2 mb-4" style={{ justifyContent: 'flex-end' }}>

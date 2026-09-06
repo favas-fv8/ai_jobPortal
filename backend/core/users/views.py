@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth import get_user_model
 from .serializers import (
     UserSerializer, UserCreateSerializer, UserUpdateSerializer, UserSummarySerializer,
-    ProfileUpdateSerializer,
+    ProfileUpdateSerializer, ChangePasswordSerializer,
 )
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -78,3 +78,14 @@ def toggle_user_active(request, user_id):
         return Response({'is_active': user.is_active, 'message': 'User status updated successfully.'})
     except User.DoesNotExist:
         return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def change_password(request):
+    serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+    serializer.is_valid(raise_exception=True)
+    user = request.user
+    user.set_password(serializer.validated_data['new_password'])
+    user.save(update_fields=['password'])
+    return Response({'message': 'Password changed successfully.'})

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from .models import User
 
 User = get_user_model()
@@ -63,6 +64,23 @@ class UserSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'first_name', 'last_name', 'email', 'role']
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True, min_length=8)
+    confirm_password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate(self, attrs):
+        user = self.context['request'].user
+        if not user.check_password(attrs.get('old_password')):
+            raise serializers.ValidationError(
+                {'old_password': 'Your current password is incorrect.'})
+        if attrs.get('new_password') != attrs.get('confirm_password'):
+            raise serializers.ValidationError(
+                {'confirm_password': 'Passwords do not match.'})
+        validate_password(attrs.get('new_password'), user)
+        return attrs
 
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):

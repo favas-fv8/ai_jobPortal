@@ -13,4 +13,6 @@ export const authApi = {
     api.patch('/auth/me/', data, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
+  changePassword: (data) =>
+    api.post('/auth/change-password/', data),
 }
