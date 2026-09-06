@@ -1,10 +1,10 @@
 import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
-import Logo from '../ui/Logo'
+import Navbar from './Navbar'
 import {
   DashboardIcon, UsersIcon, BriefcaseIcon, FileIcon, SendIcon,
-  LogoutIcon, SunIcon, MoonIcon, SparklesIcon, ActivityIcon, CompassIcon,
+  LogoutIcon, SparklesIcon, ActivityIcon,
 } from '../Icons'
 
 export default function DashboardLayout({ role }) {
@@ -43,14 +43,11 @@ export default function DashboardLayout({ role }) {
   const items = navItems[currentRole] || []
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div style={{ padding: '0 6px 16px' }}>
-          <Link to="/">
-            <Logo size={28} textSize="16px" />
-          </Link>
-        </div>
-        <nav className="sidebar-nav">
+    <>
+      <Navbar />
+      <div className="app-shell">
+        <aside className="sidebar">
+          <nav className="sidebar-nav">
           <div className="sidebar-section-label">Navigation</div>
           {items.map((item) => (
             <NavLink
@@ -92,5 +89,6 @@ export default function DashboardLayout({ role }) {
         <Outlet />
       </main>
     </div>
+    </>
   )
 }
